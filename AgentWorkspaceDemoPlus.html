@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Amazon Connect</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <script src="https://cdn.jsdelivr.net/npm/amazon-connect-streams"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <style>
+      html,
+      body {
+        height: 100%;
+        margin: 0;
+        overflow: hidden;
+      }
+
+      .container-fluid {
+        height: 100vh;
+        padding: 0;
+      }
+
+      .row {
+        height: 100%;
+        display: flex; /* 使用Flexbox布局 */
+        flex-direction: row; /* 水平方向布局 */
+        flex-wrap: nowrap; /* 不换行 */
+      }
+
+      .column {
+        height: 100%;
+        padding: 15px;
+        overflow: auto;
+        background-color: #f8f9fa;
+        flex-shrink: 0; /* 防止元素被压缩 */
+      }
+
+      /* 水平分隔条样式 - 宽度从5px改为3px */
+      .h-divider {
+        width: 3px;
+        background-color: #dee2e6;
+        cursor: col-resize;
+        position: relative;
+        flex-shrink: 0; /* 防止分隔条被压缩 */
+      }
+
+      .h-divider:hover {
+        background-color: #adb5bd;
+      }
+
+      /* 垂直分隔条样式 */
+      .v-divider {
+        height: 5px;
+        background-color: #dee2e6;
+        cursor: row-resize;
+        width: 100%;
+        flex-shrink: 0; /* 防止分隔条被压缩 */
+      }
+
+      .v-divider:hover {
+        background-color: #adb5bd;
+      }
+
+      /* 右侧列的两行容器 */
+      .right-column {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        padding: 0;
+      }
+
+      .top-row,
+      .bottom-row {
+        padding: 15px;
+        overflow: auto;
+        background-color: #f8f9fa;
+      }
+    </style>
+  </head>
+  <body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+      <a class="navbar-brand" href="#" style="margin-left: 4px"
+        >Amazon Connect</a
+      >
+    </nav>
+    <p></p>
+    <div class="container-fluid">
+      <div class="row" id="main-row">
+        <!-- 第一列 -->
+        <div class="column" id="column1">
+          <div id="ccp-container"></div>
+        </div>
+
+        <!-- 第一列和第二列之间的分隔条 -->
+        <div class="h-divider" id="divider1"></div>
+
+        <!-- 第二列 -->
+        <div class="column" id="column2">
+          <div id="customerprofiles-container"></div>
+        </div>
+
+        <!-- 第二列和第三列之间的分隔条 -->
+        <div class="h-divider" id="divider2"></div>
+
+        <!-- 第三列（分为上下两行） -->
+        <div class="column" id="column3" style="padding: 0">
+          <div class="right-column">
+            <!-- 上半部分 -->
+            <div class="top-row" id="top-row">
+              <div id="wisdom-container"></div>
+            </div>
+
+            <!-- 上下两行之间的分隔条 -->
+            <div class="v-divider" id="divider3"></div>
+
+            <!-- 下半部分 -->
+            <div class="bottom-row" id="bottom-row">
+              <h3>Transcript</h3>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        const column1 = document.getElementById("column1");
+        const column2 = document.getElementById("column2");
+        const column3 = document.getElementById("column3");
+        const divider1 = document.getElementById("divider1");
+        const divider2 = document.getElementById("divider2");
+        const topRow = document.getElementById("top-row");
+        const bottomRow = document.getElementById("bottom-row");
+        const divider3 = document.getElementById("divider3");
+
+        // 初始宽度 - 分隔条宽度从5px改为3px
+        column1.style.width = "25%";
+        divider1.style.width = "3px";
+        column2.style.width = "45%";
+        divider2.style.width = "3px";
+        column3.style.width = "30%"; // 简化为直接使用百分比
+
+        // 初始高度（第三列的两行）- 调整底部行高度计算
+        topRow.style.height = "50%";
+        bottomRow.style.height = "calc(50% - 5px)";
+
+        // 调整水平列宽度
+        function dragHorizontal(e, divider, leftCol, rightCol) {
+          e.preventDefault();
+          document.body.style.cursor = "col-resize";
+
+          const startX = e.clientX;
+          const leftWidth = leftCol.offsetWidth;
+          const rightWidth = rightCol.offsetWidth;
+
+          document.onmousemove = function (e) {
+            const deltaX = e.clientX - startX;
+
+            const newLeftWidth =
+              ((leftWidth + deltaX) /
+                document.getElementById("main-row").offsetWidth) *
+                100 +
+              "%";
+            const newRightWidth =
+              ((rightWidth - deltaX) /
+                document.getElementById("main-row").offsetWidth) *
+                100 +
+              "%";
+
+            leftCol.style.width = newLeftWidth;
+            rightCol.style.width = newRightWidth;
+          };
+
+          document.onmouseup = function () {
+            document.onmousemove = null;
+            document.onmouseup = null;
+            document.body.style.cursor = "";
+          };
+        }
+
+        // 调整垂直行高度
+        function dragVertical(e) {
+          e.preventDefault();
+          document.body.style.cursor = "row-resize";
+
+          const startY = e.clientY;
+          const topHeight = topRow.offsetHeight;
+          const bottomHeight = bottomRow.offsetHeight;
+          const totalHeight = column3.offsetHeight;
+
+          document.onmousemove = function (e) {
+            const deltaY = e.clientY - startY;
+
+            const newTopHeight =
+              ((topHeight + deltaY) / totalHeight) * 100 + "%";
+            const newBottomHeight =
+              ((bottomHeight - deltaY) / totalHeight) * 100 + "%";
+
+            topRow.style.height = newTopHeight;
+            bottomRow.style.height = newBottomHeight;
+          };
+
+          document.onmouseup = function () {
+            document.onmousemove = null;
+            document.onmouseup = null;
+            document.body.style.cursor = "";
+          };
+        }
+
+        // 绑定拖拽事件
+        divider1.addEventListener("mousedown", function (e) {
+          dragHorizontal(e, divider1, column1, column2);
+        });
+
+        divider2.addEventListener("mousedown", function (e) {
+          dragHorizontal(e, divider2, column2, column3);
+        });
+
+        divider3.addEventListener("mousedown", function (e) {
+          dragVertical(e);
+        });
+
+        function init() {
+          window.contact = null;
+          const connectUrl = "https://connect-us-1.my.connect.aws";
+          connect.agentApp.initApp(
+            "ccp",
+            "ccp-container",
+            connectUrl + "/ccp-v2/",
+            {
+              style: "width:100%;height:" + (column2.offsetHeight - 100) + "px",
+              ccpParams: {
+                loginPopup: true,
+                loginPopupAutoClose: true,
+              },
+            }
+          );
+          connect.agentApp.initApp(
+            "customerprofiles",
+            "customerprofiles-container",
+            connectUrl + "/customerprofiles-v2/",
+            {
+              style: "width:100%;height:" + (column2.offsetHeight - 100) + "px",
+            }
+          );
+
+          connect.agentApp.initApp(
+            "wisdom",
+            "wisdom-container",
+            connectUrl + "/wisdom-v2/",
+            {
+              style: "width:100%;height:" + (topRow.offsetHeight - 30) + "px",
+            }
+          );
+        }
+
+        init();
+      });
+    </script>
+  </body>
+</html>
