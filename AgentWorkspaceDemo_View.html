@@ -78,20 +78,38 @@
 
             window.contact = c;
 
-            connect.agentApp.initApp(
-              "customviews",
-              "customviews-container",
-              connectUrl + "/stargate/app",
-              {
-                style: "width:100%; height:800px;",
-                customViewsParams: {
-                  contact: contact,
-                  contactFlowId: "c70d7aa8-f087-456d-8937-931c79bb209a",
-                  iframeSuffix: `${contact.getContactId()}-c70d7aa8-f087-456d-8937-931c79bb209a`,
-                  disableAutoDestroy: true
-                },
-              }
-            )
+            if (c.isInbound()) {
+              connect.agentApp.initApp(
+                "customviews",
+                "customviews-container",
+                connectUrl + "/stargate/app",
+                {
+                  style: "width:100%; height:800px;",
+                  customViewsParams: {
+                    contact: contact,
+                    contactFlowId: "6a33453f-54dd-4756-8b40-7bf94ac2484a",
+                    iframeSuffix: `${contact.getContactId()}-6a33453f-54dd-4756-8b40-7bf94ac2484a`,
+                    disableAutoDestroy: true
+                  },
+                }
+              );
+            }
+            else {
+              connect.agentApp.initApp(
+                "customviews",
+                "customviews-container",
+                connectUrl + "/stargate/app",
+                {
+                  style: "width:100%; height:800px;",
+                  customViewsParams: {
+                    contact: contact,
+                    contactFlowId: "c70d7aa8-f087-456d-8937-931c79bb209a",
+                    iframeSuffix: `${contact.getContactId()}-c70d7aa8-f087-456d-8937-931c79bb209a`,
+                    disableAutoDestroy: true
+                  },
+                }
+              );
+            }
 
           });
 
