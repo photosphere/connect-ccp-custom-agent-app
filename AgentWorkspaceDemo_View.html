@@ -78,6 +78,8 @@
 
             window.contact = c;
 
+            removeCustomViewsIframe();
+
             if (c.isInbound()) {
               connect.agentApp.initApp(
                 "customviews",
@@ -130,6 +132,13 @@
           })
 
         });
+      }
+      
+      function removeCustomViewsIframe() {
+        const container = document.getElementById('customviews-container');
+        if (container && container.querySelector('iframe')) {
+          container.removeChild(container.querySelector('iframe'));
+        }
       }
     </script>
 </body>
